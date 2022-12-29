@@ -10,7 +10,7 @@ import (
 func Product() {
 	fmt.Println("Hi, you are here to perform CRUD operations on 'product' table")
 	fmt.Println("Please choose the task to perform")
-	fmt.Printf("1.Insert\n2.Read\n3.Update\n4.Delete\n")
+	fmt.Printf("1.Insert\n2.Read with product id\n3.Update\n4.Delete\n5.Short Description with page no\n")
 	fmt.Println("Please enter your choice")
 	var choice int
 	_, err := fmt.Scanf("%d", &choice)
@@ -25,6 +25,8 @@ func Product() {
 		UpdateProduct()
 	} else if choice == 4 {
 		DeleteProduct()
+	} else if choice == 5 {
+		ReadShortProduct()
 	}
 }
 
@@ -126,6 +128,32 @@ func ReadProduct() {
 		return
 	}
 
+}
+
+func ReadShortProduct() {
+	fmt.Println("Please enter the page number to get the product")
+	var page string
+	_, err := fmt.Scanln(&page)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	_, err = http.Get("http://localhost:8080/product/getpage/" + page)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println("Do you want to continue? (yes or no)")
+	var cont string
+	_, err = fmt.Scanln(&cont)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if cont == "yes" {
+		Console()
+	} else {
+		return
+	}
 }
 
 func UpdateProduct() {
