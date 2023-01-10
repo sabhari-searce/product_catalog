@@ -1,26 +1,27 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
+	rsp "github.com/sabhari/product_catlog/Response"
+	service "github.com/sabhari/product_catlog/Services"
 	"github.com/sabhari/product_catlog/helpers"
 )
 
 func CreateCartReference(w http.ResponseWriter, r *http.Request) {
-	reference := uuid.New()
-	query := "INSERT INTO cart_reference VALUES($1,$2)"
 
-	_, err := helpers.RunQuery(query, w, reference, time.Now())
-	helpers.HandleError("Error in creating reference ", err, w)
-
-	if err != nil {
-		helpers.ResponseWriteToScreen(err, "ERROR IN CREATING REFERENCE", w)
+	reference := service.CreateCartReferenceBL()
+	if reference == uuid.Nil {
+		json.NewEncoder(w).Encode(rsp.CreateCartReferenceErr)
+		helpers.HandleError(rsp.CreateCartReferenceErr, nil)
 	} else {
-		response := fmt.Sprintln("Reference succesfully created and the reference is ", reference)
-		helpers.ResponseWriteToScreen(err, response, w)
+		res := fmt.Sprint("Reference has been created and the reference is ", reference)
+		json.NewEncoder(w).Encode(res)
+		helpers.HandleError(res, nil)
+
 	}
 
 }

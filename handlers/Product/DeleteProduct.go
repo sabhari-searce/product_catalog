@@ -2,35 +2,39 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	rsp "github.com/sabhari/product_catlog/Response"
+	services "github.com/sabhari/product_catlog/Services"
 	shorthandhelpers "github.com/sabhari/product_catlog/ShorthandHelpers"
 	"github.com/sabhari/product_catlog/helpers"
 )
 
 func DeleteProduct(w http.ResponseWriter, r *http.Request) {
-	query := "DELETE FROM product WHERE product_id = $1"
 	args := mux.Vars(r)
 
 	id, err := strconv.Atoi(args["id"])
-	helpers.HandleError("Conversion Error", err, w)
+	helpers.HandleError(rsp.AtoiErr, err)
 
-	found, _ := shorthandhelpers.GetProductHelper(id, w)
+	if id <= 0 {
+		helpers.HandleError(rsp.ProductIdErr, nil)
+		json.NewEncoder(w).Encode(rsp.ProductIdErr)
 
-	if found == 404 {
-		json.NewEncoder(w).Encode(map[string]string{"response": "DATA NOT FOUND FOR DELETING!!"})
-		return
 	}
 
-	_, err = helpers.RunQuery(query, w, args["id"])
+	found := shorthandhelpers.GetProductHelper(id)
 
-	helpers.HandleError("Error while deleting element", err, w)
+	if found == 404 {
+		json.NewEncoder(w).Encode(rsp.ProductDelErr)
+		helpers.HandleError(rsp.ProductDelErr["response"], nil)
+		return
+	}
+	services.DeleteProductBL(id)
 
 	//helpers.ResponseWriteToScreen(err, "DELETE ON PRODUCT", w)
-	json.NewEncoder(w).Encode(map[string]string{"response": "DELETE ON PRODUCT DONE"})
-	fmt.Println(map[string]string{"response": "DELETE ON PRODUCT DONE"})
+	json.NewEncoder(w).Encode(rsp.ProductDel)
+	helpers.HandleError(rsp.ProductDel["response"], nil)
 
 }

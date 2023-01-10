@@ -6,36 +6,27 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	rsp "github.com/sabhari/product_catlog/Response"
+	service "github.com/sabhari/product_catlog/Services"
 	"github.com/sabhari/product_catlog/helpers"
 	"github.com/sabhari/product_catlog/typedefs"
 )
 
 func GetProduct(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT product.product_id,product.name,product.specification,product.sku,category.name,product.price FROM product JOIN category ON product.category_id = category.category_id WHERE product.product_id = $1"
 	args := mux.Vars(r)
 	list_of_product := []typedefs.ProductDesc{}
+	id := args["id"]
 
-	rows, err := helpers.RunQuery(query, w, args["id"])
-	rows.Scan()
-	helpers.HandleError("Error in getting product", err, w)
-
-	for rows.Next() {
-		new_product := typedefs.ProductDesc{}
-		spec_json := ""
-		err := rows.Scan(&new_product.Product_ID, &new_product.Name, &spec_json, &new_product.SKU, &new_product.Category_name, &new_product.Price)
-		helpers.HandleError("Error in rows next", err, w)
-		json.Unmarshal([]byte(spec_json), &new_product.Specification)
-		list_of_product = append(list_of_product, new_product)
-	}
+	service.GetProductBL(list_of_product, id)
 
 	if len(list_of_product) == 0 {
-		json.NewEncoder(w).Encode(map[string]string{"response": "NO DATA FOUND!"})
+		json.NewEncoder(w).Encode(rsp.GetProductErr)
+		helpers.HandleError(rsp.GetProductErr["response"], nil)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(list_of_product[0])
-	helpers.HandleError("Error in returning product", err, w)
+	err := json.NewEncoder(w).Encode(list_of_product[0])
+	helpers.HandleError(rsp.WritingErr, err)
 	fmt.Println(list_of_product[0])
-	//helpers.ResponseWriteToScreen(err, "FETCHING DATA FROM PRODUCT", w)
 
 }

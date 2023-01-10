@@ -6,33 +6,26 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	rsp "github.com/sabhari/product_catlog/Response"
+	service "github.com/sabhari/product_catlog/Services"
 	"github.com/sabhari/product_catlog/helpers"
 	"github.com/sabhari/product_catlog/typedefs"
 )
 
 func GetCategory(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT * FROM category WHERE category_id = $1"
 	args := mux.Vars(r)
 	list_of_category := []typedefs.Category{}
 
-	rows, err := helpers.RunQuery(query, w, args["id"])
-	rows.Scan()
-	helpers.HandleError("Error in getting Category", err, w)
-
-	for rows.Next() {
-		new_category := typedefs.Category{}
-		err := rows.Scan(&new_category.CategoryID, &new_category.Name)
-		helpers.HandleError("Error in rows next", err, w)
-		list_of_category = append(list_of_category, new_category)
-	}
+	service.GetCategoryBL(args, list_of_category)
 
 	if len(list_of_category) == 0 {
-		json.NewEncoder(w).Encode(map[string]string{"response": "NO DATA FOUND!"})
+		json.NewEncoder(w).Encode(rsp.GetProductErr)
+		helpers.HandleError(rsp.GetProductErr["response"], nil)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(list_of_category[0])
-	helpers.HandleError("Error in getting category", err, w)
+	err := json.NewEncoder(w).Encode(list_of_category[0])
+	helpers.HandleError(rsp.CategoryGetErr, err)
 	fmt.Println(list_of_category[0])
 
 }

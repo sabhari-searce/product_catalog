@@ -10,3 +10,13 @@
 
 2022/12/29 18:53:01 Str to Int conversion :  strconv.Atoi: parsing "": invalid syntax
 
+2022/12/30 10:29:12 Execution error :  sql: expected 2 arguments, got 1
+
+2022/12/30 10:42:19 Execution error :  pq: duplicate key value violates unique constraint "inventory_pkey"
+
+2022/12/30 10:42:19 Error in inserting :  pq: duplicate key value violates unique constraint "inventory_pkey"
+
+2022/12/30 10:53:38 DB Prepare error :  pq: column "quantitycart" does not exist
+
+2022/12/30 10:55:48 DB Prepare error :  pq: column "quantitycart" does not exist
+

@@ -6,33 +6,26 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	rsp "github.com/sabhari/product_catlog/Response"
+	service "github.com/sabhari/product_catlog/Services"
 	"github.com/sabhari/product_catlog/helpers"
 	"github.com/sabhari/product_catlog/typedefs"
 )
 
 func GetInventory(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT * FROM inventory WHERE product_id = $1"
 	args := mux.Vars(r)
 	list_of_inventory := []typedefs.Inventory{}
 
-	rows, err := helpers.RunQuery(query, w, args["id"])
-	rows.Scan()
-	helpers.HandleError("Error in getting Category", err, w)
-
-	for rows.Next() {
-		new_inventory := typedefs.Inventory{}
-		err := rows.Scan(&new_inventory.ProductID, &new_inventory.Quantity)
-		helpers.HandleError("Error in rows next", err, w)
-		list_of_inventory = append(list_of_inventory, new_inventory)
-	}
+	service.GetInventoryBL(list_of_inventory, args["id"])
 
 	if len(list_of_inventory) == 0 {
-		json.NewEncoder(w).Encode(map[string]string{"response": "NO DATA FOUND!"})
+		json.NewEncoder(w).Encode(rsp.GetProductErr)
+		helpers.HandleError(rsp.GetProductErr["response"], nil)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(list_of_inventory[0])
-	helpers.HandleError("Error in writing inventory to screen", err, w)
+	err := json.NewEncoder(w).Encode(list_of_inventory[0])
+	helpers.HandleError(rsp.WritingErr, err)
 	fmt.Println(list_of_inventory[0])
 
 }

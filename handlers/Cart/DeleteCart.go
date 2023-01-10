@@ -2,36 +2,43 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
+	response "github.com/sabhari/product_catlog/Response"
+	services "github.com/sabhari/product_catlog/Services"
 	shorthandhelpers "github.com/sabhari/product_catlog/ShorthandHelpers"
 	"github.com/sabhari/product_catlog/helpers"
 )
 
 func DeleteCategory(w http.ResponseWriter, r *http.Request) {
-	query := "DELETE FROM cart_item WHERE ref = $1 AND product_id = $2"
 	urlQuery := r.URL.Query()
 	reference := urlQuery.Get("ref")
 	product := urlQuery.Get("product_id")
 
 	product_id, err := strconv.Atoi(product)
-	helpers.HandleError("Conversion Error", err, w)
+	if err != nil {
+		helpers.HandleError(response.AtoiErr, err)
+		json.NewEncoder(w).Encode(response.AtoiErr)
+	}
 
-	found, _ := shorthandhelpers.GetCartHelper(reference, product_id, w)
+	found, _ := shorthandhelpers.GetCartHelper(reference, product_id)
 
 	if found == 404 {
-		json.NewEncoder(w).Encode(map[string]string{"response": "DATA NOT FOUND FOR DELETING!!"})
+		json.NewEncoder(w).Encode(response.ProductDelErr)
+		helpers.HandleError(response.ProductDelErr["response"], nil)
 		return
 	}
 
-	_, err = helpers.RunQuery(query, w, reference, product_id)
+	status := services.DeleteCartBL(reference, product_id)
 
-	helpers.HandleError("Error while deleting element", err, w)
-
-	//helpers.ResponseWriteToScreen(err, "DELETE ON CART", w)
-	json.NewEncoder(w).Encode(map[string]string{"response": "DELETE ON CART DONE!!"})
-	fmt.Println(map[string]string{"response": "DELETE ON CART DONE!!"})
+	if status == 200 {
+		//helpers.ResponseWriteToScreen(err, "DELETE ON CART", w)
+		json.NewEncoder(w).Encode(response.DeleteCart)
+		helpers.HandleError(response.DeleteCart["response"], nil)
+	} else if status == 404 {
+		json.NewEncoder(w).Encode(response.DeleteCartErr)
+		helpers.HandleError(response.DeleteCartErr, nil)
+	}
 
 }

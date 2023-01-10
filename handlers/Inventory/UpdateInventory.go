@@ -2,63 +2,43 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	rsp "github.com/sabhari/product_catlog/Response"
+	service "github.com/sabhari/product_catlog/Services"
 	shorthandhelpers "github.com/sabhari/product_catlog/ShorthandHelpers"
+
 	"github.com/sabhari/product_catlog/helpers"
 )
-
-var key_elements []string = []string{"quantity"}
 
 func UpdateInventory(w http.ResponseWriter, r *http.Request) {
 	var inventory map[string]any
 	json.NewDecoder(r.Body).Decode(&inventory)
 	args := mux.Vars(r)
 	id, err := strconv.Atoi(args["id"])
-	helpers.HandleError("Eror when converting string to int", err, w)
+	helpers.HandleError(rsp.AtoiErr, err)
 
-	status, _ := shorthandhelpers.GetInventoryHelper(id, w)
+	status := shorthandhelpers.GetInventoryHelper(id)
 	if status == 404 {
-		json.NewEncoder(w).Encode(map[string]string{"response": "ENTERED ID NOT FOUND FOR UPDATING"})
+		json.NewEncoder(w).Encode(rsp.UpdateInvIdErr)
+		helpers.HandleError(rsp.UpdateInvIdErr["response"], nil)
 		return
 	}
 
-	query := "UPDATE inventory SET "
+	status = service.UpdateInventoryBL(inventory, id)
 
-	for key, value := range inventory {
+	if status == 200 {
+		json.NewEncoder(w).Encode(rsp.UpdateInventoryDone)
+		helpers.HandleError(rsp.UpdateInventoryDone["response"], nil)
 
-		if !contains(key) {
-			json.NewEncoder(w).Encode(map[string]string{"response": "ENTERED KEY NOT FOUND IN THE TABLE"})
-			fmt.Println("ENTERED KEY NOT FOUND IN THE TABLE")
-			return
-		}
-		// if key == "quantity" && value.(int) < 0 {
-		// 	json.NewEncoder(w).Encode(map[string]string{"response": "QUANTITY CANNOT BE NEGATIVE"})
-		// 	return
-		// }
-		query = query + key + "='" + fmt.Sprintf("%v", value) + "'" + " WHERE product_id=" + args["id"]
-		_, erro := helpers.RunQuery(query, w)
-		helpers.HandleError("ERROR IN RUNNING UPDATE", erro, w)
-
-		if erro != nil {
-			json.NewEncoder(w).Encode(erro)
-			return
-		}
-		query = "UPDATE inventory SET "
-
+	} else if status == 404 {
+		json.NewEncoder(w).Encode(rsp.UpdateInvErr)
+		helpers.HandleError(rsp.UpdateInvErr, nil)
+	} else if status == 403 {
+		json.NewEncoder(w).Encode(rsp.UpdateInvKey)
+		helpers.HandleError(rsp.UpdateInvKey, nil)
 	}
-	json.NewEncoder(w).Encode(map[string]string{"response": "UPDATE ON INVENTORY DONE"})
 
-}
-
-func contains(word string) bool {
-	for _, elem := range key_elements {
-		if word == elem {
-			return true
-		}
-	}
-	return false
 }

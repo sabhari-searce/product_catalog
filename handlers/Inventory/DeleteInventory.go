@@ -2,35 +2,45 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	rsp "github.com/sabhari/product_catlog/Response"
+	service "github.com/sabhari/product_catlog/Services"
 	shorthandhelpers "github.com/sabhari/product_catlog/ShorthandHelpers"
 	"github.com/sabhari/product_catlog/helpers"
 )
 
 func DeleteInventory(w http.ResponseWriter, r *http.Request) {
-	query := "DELETE FROM inventory WHERE product_id = $1"
 	args := mux.Vars(r)
 
 	id, err := strconv.Atoi(args["id"])
-	helpers.HandleError("Conversion Error", err, w)
+	helpers.HandleError("Conversion Error", err)
 
-	found, _ := shorthandhelpers.GetInventoryHelper(id, w)
+	if id <= 0 {
+
+		json.NewEncoder(w).Encode(rsp.ProductIdErr)
+		helpers.HandleError(rsp.ProductIdErr, nil)
+	}
+
+	found := shorthandhelpers.GetInventoryHelper(id)
 
 	if found == 404 {
-		json.NewEncoder(w).Encode(map[string]string{"response": "DATA NOT FOUND FOR DELETING!!"})
+		json.NewEncoder(w).Encode(rsp.ProductDelErr)
+		helpers.HandleError(rsp.ProductDelErr["response"], nil)
 		return
 	}
 
-	_, err = helpers.RunQuery(query, w, args["id"])
+	status := service.DeleteInventoryBL(args["id"])
 
-	helpers.HandleError("Error while deleting element", err, w)
+	if status == 200 {
+		json.NewEncoder(w).Encode(rsp.InventoryDel)
+		helpers.HandleError(rsp.InventoryDel["response"], nil)
 
-	//helpers.ResponseWriteToScreen(err, "DELETE ON INVENTORY", w)
-	json.NewEncoder(w).Encode(map[string]string{"response": "DELETE ON INVENTORY DONE!!"})
-	fmt.Println(map[string]string{"response": "DELETE ON INVENTORY DONE!!"})
+	} else if status == 404 {
+		json.NewEncoder(w).Encode(rsp.InventoryDelErr)
+		helpers.HandleError(rsp.InventoryDelErr["response"], nil)
+	}
 
 }
